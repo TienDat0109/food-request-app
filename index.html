@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hôm nay ăn gì? 🍜</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      min-height: 100vh;
+      padding: 24px 16px 40px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+    .header p { color: #777; font-size: 0.9rem; }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 20px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      flex-shrink: 0;
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 20px;
+      padding: 8px 16px;
+      color: #aaa;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { border-color: #555; color: #fff; }
+    .tab-btn.active {
+      background: #1a1a1a;
+      border-color: #f97316;
+      color: #f97316;
+      font-weight: 600;
+    }
+
+    /* FOOD GRID */
+    .category-panel { display: none; }
+    .category-panel.active { display: block; }
+
+    .category-title {
+      font-size: 0.75rem;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 380px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .food-btn {
+      background: #141414;
+      border: 2px solid #252525;
+      border-radius: 14px;
+      padding: 14px 8px;
+      font-size: 0.82rem;
+      color: #ccc;
+      cursor: pointer;
+      transition: all 0.18s;
+      text-align: center;
+      line-height: 1.4;
+    }
+    .food-btn:hover { border-color: #f97316; color: #fff; background: #1c1208; }
+    .food-btn.selected {
+      border-color: #f97316;
+      background: #221508;
+      color: #fff;
+      transform: scale(1.04);
+    }
+    .food-btn .emoji {
+      font-size: 1.7rem;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    /* BOTTOM SECTION */
+    .bottom {
+      max-width: 600px;
+      margin: 24px auto 0;
+    }
+
+    textarea {
+      width: 100%;
+      background: #141414;
+      border: 2px solid #252525;
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #fff;
+      font-size: 0.95rem;
+      resize: none;
+      height: 76px;
+      transition: border-color 0.2s;
+    }
+    textarea::placeholder { color: #444; }
+    textarea:focus { outline: none; border-color: #f97316; }
+
+    .selected-preview {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: #1a1a1a;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      color: #888;
+      min-height: 42px;
+      border: 1px solid #222;
+    }
+    .selected-preview span { color: #f97316; font-weight: 600; }
+
+    .send-btn {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      background: #f97316;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 18px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.3px;
+    }
+    .send-btn:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+    .send-btn:active:not(:disabled) { transform: scale(0.98); }
+    .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 0.9rem;
+      min-height: 22px;
+    }
+    .status.success { color: #4ade80; }
+    .status.error { color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Hôm nay ăn gì? 🍜</h1>
+    <p>Chọn món rồi gửi cho anh nhé ❤️</p>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" id="tabBar"></div>
+
+  <!-- PANELS -->
+  <div id="panels"></div>
+
+  <!-- BOTTOM -->
+  <div class="bottom">
+    <div class="selected-preview" id="preview">Chưa chọn món nào...</div>
+    <textarea id="note" placeholder="Ghi chú thêm... (ít cay, thêm rau, không hành...)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendRequest()" disabled>
+      Gửi yêu cầu 💌
+    </button>
+    <p class="status" id="status"></p>
+  </div>
+
+  <script>
+    // =============================================
+    // ĐỔI 2 GIÁ TRỊ NÀY
+    const BOT_TOKEN = "8680327352:AAH3kME8b7z5_Laq1ph07VzwjcGtPb0Twsk";
+    const CHAT_ID   = "6667557645";
+    // =============================================
+
+    const categories = [
+      {
+        id: "sang",
+        label: "🌅 Ăn sáng",
+        items: [
+          { emoji: "🍜", name: "Phở bò" },
+          { emoji: "🍜", name: "Phở gà" },
+          { emoji: "🥣", name: "Bún thang" },
+          { emoji: "🫔", name: "Bánh cuốn" },
+          { emoji: "🥖", name: "Bánh mì" },
+          { emoji: "🍚", name: "Xôi xéo" },
+          { emoji: "🍚", name: "Xôi khúc" },
+          { emoji: "🍚", name: "Xôi gà" },
+          { emoji: "🍚", name: "Xôi lạc" },
+          { emoji: "🥟", name: "Bánh giò" },
+          { emoji: "🫔", name: "Bánh rán mặn" },
+          { emoji: "🥣", name: "Cháo lòng" },
+          { emoji: "🥣", name: "Cháo gà" },
+          { emoji: "🥣", name: "Miến gà" },
+          { emoji: "🥣", name: "Miến ngan" },
+          { emoji: "🥣", name: "Bún mọc" },
+          { emoji: "🥣", name: "Bún riêu" },
+          { emoji: "🍳", name: "Bánh mì trứng" },
+          { emoji: "🥖", name: "Bánh mì sốt vang" },
+          { emoji: "🍵", name: "Cháo yến mạch" },
+        ]
+      },
+      {
+        id: "nuoc",
+        label: "🍲 Món nước",
+        items: [
+          { emoji: "🍜", name: "Phở bò tái" },
+          { emoji: "🍜", name: "Phở bò chín" },
+          { emoji: "🍜", name: "Phở gà" },
+          { emoji: "🥣", name: "Bún chả cá" },
+          { emoji: "🥣", name: "Bún riêu cua" },
+          { emoji: "🥣", name: "Bún ốc" },
+          { emoji: "🥣", name: "Bún ốc chuối đậu" },
+          { emoji: "🥣", name: "Bún thang" },
+          { emoji: "🥣", name: "Bún mọc dọc mùng" },
+          { emoji: "🥣", name: "Bún ngan" },
+          { emoji: "🥣", name: "Bún bò Huế" },
+          { emoji: "🥣", name: "Bún cá" },
+          { emoji: "🍜", name: "Miến gà" },
+          { emoji: "🍜", name: "Miến ngan nước" },
+          { emoji: "🥣", name: "Bánh đa cua" },
+          { emoji: "🥣", name: "Cháo sườn sụn" },
+          { emoji: "🥣", name: "Cháo trai" },
+          { emoji: "🥣", name: "Cháo vịt" },
+          { emoji: "🥣", name: "Súp cua" },
+          { emoji: "🥣", name: "Súp gà" },
+          { emoji: "🥣", name: "Canh bún" },
+          { emoji: "🍲", name: "Lẩu thái hải sản" },
+          { emoji: "🍲", name: "Lẩu bò" },
+          { emoji: "🍲", name: "Lẩu riêu cua" },
+          { emoji: "🍲", name: "Lẩu gà lá giang" },
+          { emoji: "🍲", name: "Lẩu ếch" },
+          { emoji: "🍲", name: "Lẩu nấm" },
+          { emoji: "🍲", name: "Lẩu cua đồng" },
+          { emoji: "🍲", name: "Lẩu hải sản" },
+        ]
+      },
+      {
+        id: "trua",
+        label: "☀️ Ăn trưa",
+        items: [
+          { emoji: "🍛", name: "Cơm văn phòng" },
+          { emoji: "🍛", name: "Cơm gà" },
+          { emoji: "🍛", name: "Cơm sườn" },
+          { emoji: "🍛", name: "Cơm bình dân" },
+          { emoji: "🥗", name: "Bún chả" },
+          { emoji: "🥗", name: "Bún đậu mắm tôm" },
+          { emoji: "🥗", name: "Bún thịt nướng" },
+          { emoji: "🍱", name: "Cơm hộp" },
+          { emoji: "🍱", name: "Cơm niêu" },
+          { emoji: "🥣", name: "Miến trộn" },
+          { emoji: "🥗", name: "Nộm bò khô" },
+          { emoji: "🍛", name: "Cơm rang dưa bò" },
+          { emoji: "🍛", name: "Cơm rang hải sản" },
+          { emoji: "🍛", name: "Cơm tấm" },
+          { emoji: "🫔", name: "Bánh mì kẹp thịt" },
+          { emoji: "🥗", name: "Gỏi cuốn" },
+          { emoji: "🍱", name: "Cơm Nhật (bento)" },
+          { emoji: "🍜", name: "Mì xào hải sản" },
+          { emoji: "🍜", name: "Mì xào bò" },
+          { emoji: "🌯", name: "Phở cuốn" },
+        ]
+      },
+      {
+        id: "toi",
+        label: "🌙 Ăn tối",
+        items: [
+          { emoji: "🔥", name: "Bún chả nướng" },
+          { emoji: "🔥", name: "Thịt nướng vỉa hè" },
+          { emoji: "🔥", name: "Nướng than hoa" },
+          { emoji: "🔥", name: "BBQ bò nầm" },
+          { emoji: "🔥", name: "Lòng nướng" },
+          { emoji: "🔥", name: "Chân gà nướng" },
+          { emoji: "🔥", name: "Sườn nướng" },
+          { emoji: "🔥", name: "Gà nướng muối ớt" },
+          { emoji: "🔥", name: "Vịt nướng" },
+          { emoji: "🐟", name: "Chả cá Lã Vọng" },
+          { emoji: "🐟", name: "Cá kho tộ" },
+          { emoji: "🦑", name: "Mực chiên bơ tỏi" },
+          { emoji: "🦐", name: "Tôm hấp bia" },
+          { emoji: "🐚", name: "Ốc xào sả ớt" },
+          { emoji: "🐚", name: "Ngao hấp thái" },
+          { emoji: "🐚", name: "Ốc nhồi hấp rượu" },
+          { emoji: "🥩", name: "Bò tái chanh" },
+          { emoji: "🥩", name: "Bò lá lốt" },
+          { emoji: "🥩", name: "Dê nướng" },
+          { emoji: "🍚", name: "Cơm gia đình" },
+          { emoji: "🍱", name: "Cơm hải sản" },
+          { emoji: "🌯", name: "Cuốn diếp" },
+          { emoji: "🥘", name: "Chả rươi" },
+          { emoji: "🍗", name: "Gà hấp hành" },
+        ]
+      },
+      {
+        id: "vat",
+        label: "🍡 Ăn vặt",
+        items: [
+          { emoji: "🍢", name: "Bánh tôm Tây Hồ" },
+          { emoji: "🥟", name: "Bánh rán mặn" },
+          { emoji: "🥟", name: "Bánh rán ngọt" },
+          { emoji: "🥟", name: "Bánh giò" },
+          { emoji: "🌯", name: "Phở cuốn" },
+          { emoji: "🥗", name: "Nộm bò khô" },
+          { emoji: "🫔", name: "Bún đậu mắm tôm" },
+          { emoji: "🍡", name: "Chả cốm" },
+          { emoji: "🌽", name: "Ngô nướng" },
+          { emoji: "🥔", name: "Khoai lang nướng" },
+          { emoji: "🍠", name: "Khoai lang chiên" },
+          { emoji: "🥚", name: "Trứng vịt lộn" },
+          { emoji: "🥚", name: "Trứng cút lộn" },
+          { emoji: "🐚", name: "Ốc hút" },
+          { emoji: "🐚", name: "Ốc xào" },
+          { emoji: "🍧", name: "Tào phớ" },
+          { emoji: "🍮", name: "Caramen / Flan" },
+          { emoji: "🍦", name: "Kem Tràng Tiền" },
+          { emoji: "🍨", name: "Sữa chua nếp cẩm" },
+          { emoji: "🫘", name: "Chè đậu đen" },
+          { emoji: "🫘", name: "Chè đậu xanh" },
+          { emoji: "🍡", name: "Bánh trôi tàu" },
+          { emoji: "🍡", name: "Xôi cốm" },
+          { emoji: "🍃", name: "Cốm làng Vòng" },
+          { emoji: "🍬", name: "Ô mai" },
+          { emoji: "🧇", name: "Bánh mì nướng bơ" },
+          { emoji: "🫔", name: "Bánh cốm" },
+          { emoji: "🍢", name: "Nem cuốn" },
+          { emoji: "🍢", name: "Nem rán" },
+          { emoji: "🍗", name: "Cánh gà chiên" },
+          { emoji: "🍗", name: "Chân gà sốt chanh" },
+          { emoji: "🌮", name: "Bánh tráng trộn" },
+        ]
+      }
+    ];
+
+    let selected = null;
+
+    // Build tabs + panels
+    const tabBar   = document.getElementById("tabBar");
+    const panelsEl = document.getElementById("panels");
+
+    categories.forEach((cat, ci) => {
+      // Tab button
+      const tab = document.createElement("button");
+      tab.className = "tab-btn" + (ci === 0 ? " active" : "");
+      tab.textContent = cat.label;
+      tab.onclick = () => switchTab(cat.id);
+      tabBar.appendChild(tab);
+
+      // Panel
+      const panel = document.createElement("div");
+      panel.className = "category-panel" + (ci === 0 ? " active" : "");
+      panel.id = "panel-" + cat.id;
+
+      const grid = document.createElement("div");
+      grid.className = "grid";
+
+      cat.items.forEach(food => {
+        const btn = document.createElement("button");
+        btn.className = "food-btn";
+        btn.innerHTML = `<span class="emoji">${food.emoji}</span>${food.name}`;
+        btn.onclick = () => selectFood(food, btn);
+        grid.appendChild(btn);
+      });
+
+      panel.appendChild(grid);
+      panelsEl.appendChild(panel);
+    });
+
+    function switchTab(id) {
+      document.querySelectorAll(".tab-btn").forEach((t, i) => {
+        t.classList.toggle("active", categories[i].id === id);
+      });
+      document.querySelectorAll(".category-panel").forEach(p => {
+        p.classList.toggle("active", p.id === "panel-" + id);
+      });
+    }
+
+    function selectFood(food, btn) {
+      document.querySelectorAll(".food-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      selected = food;
+      document.getElementById("preview").innerHTML =
+        `Đã chọn: <span>${food.emoji} ${food.name}</span>`;
+      document.getElementById("sendBtn").disabled = false;
+    }
+
+    async function sendRequest() {
+      const note   = document.getElementById("note").value.trim();
+      const btn    = document.getElementById("sendBtn");
+      const status = document.getElementById("status");
+
+      let message = `🍽️ *Yêu cầu món ăn mới!*\n\n`;
+      message += `Món: *${selected.emoji} ${selected.name}*`;
+      if (note) message += `\nGhi chú: _${note}_`;
+      message += `\n\n_Gửi từ app đặt món_ 💌`;
+
+      btn.disabled = true;
+      status.textContent = "Đang gửi...";
+      status.className = "status";
+
+      try {
+        const res = await fetch(
+          `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: CHAT_ID,
+              text: message,
+              parse_mode: "Markdown"
+            })
+          }
+        );
+        const data = await res.json();
+        if (data.ok) {
+          status.textContent = "✅ Đã gửi! Chờ anh nhé~";
+          status.className = "status success";
+          // Reset sau 3s
+          setTimeout(() => {
+            status.textContent = "";
+            status.className = "status";
+            btn.disabled = false;
+          }, 3000);
+        } else {
+          throw new Error(data.description);
+        }
+      } catch (err) {
+        status.textContent = "❌ Gửi thất bại: " + err.message;
+        status.className = "status error";
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
